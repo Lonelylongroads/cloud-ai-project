@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-ai-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloud-ai
+  template:
+    metadata:
+      labels:
+        app: cloud-ai
+    spec:
+      containers:
+        - name: ai-container
+          image: cloud-ai-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secret
+                  key: token
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-ai-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 5000
+  selector:
+    app: cloud-ai
