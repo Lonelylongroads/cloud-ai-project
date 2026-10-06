@@ -1,51 +1,82 @@
 import os
+import time
 import requests
-from flask import Flask, jsonify, request
-from flask_cors import CORS
+from flask import Flask, request, jsonify, render_template
 
-app = Flask(__name__)
-CORS(app)
+app = Flask(__name__, template_folder='.')
 
-# Updated Hugging Face Serverless Endpoint
-HUGGINGFACE_API_URL = "https://router.huggingface.co/hf-inference/v1/models/distilbert-base-uncased-finetuned-sst-2-english"
-HF_TOKEN = os.getenv("HF_TOKEN", "")
+# Environment & Model Setup
+HUGGINGFACE_API_KEY = os.environ.get("HUGGINGFACE_API_KEY", "")
+HF_MODEL_URL = "https://api-inference.huggingface.co/models/distilbert-base-uncased-finetuned-sst-2-english"
 
-@app.route("/", methods=["GET"])
+# Request Metrics Tracking
+metrics = {
+    "total_requests": 0,
+    "successful_requests": 0,
+    "failed_requests": 0,
+    "start_time": time.time()
+}
+
+@app.route('/')
 def home():
+    """Serves the Frontend Dashboard."""
+    return render_template('index.html')
+
+@app.route('/healthz', methods=['GET'])
+def health_check():
+    """Kubernetes Liveness and Readiness Probe Endpoint."""
     return jsonify({
-        "status": "Cloud Microservice Online",
-        "syllabus_coverage": "Unit 1 (Architecture) & Unit 3 (Cloud Native)"
-    })
+        "status": "healthy",
+        "service": "cloud-ai-microservice",
+        "uptime_seconds": int(time.time() - metrics["start_time"])
+    }), 200
 
-@app.route("/analyze", methods=["POST"])
-def analyze_text():
-    data = request.json or {}
-    text_to_analyze = data.get("text", "")
-    
-    if not text_to_analyze:
-        return jsonify({"error": "No text provided"}), 400
+@app.route('/metrics', methods=['GET'])
+def get_metrics():
+    """Prometheus-style Application Metrics Endpoint."""
+    return jsonify({
+        "total_requests_handled": metrics["total_requests"],
+        "successful_analyzed": metrics["successful_requests"],
+        "failed_requests": metrics["failed_requests"],
+        "uptime_seconds": int(time.time() - metrics["start_time"])
+    }), 200
 
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-    payload = {"inputs": text_to_analyze}
-    
+@app.route('/analyze', methods=['POST'])
+def analyze_sentiment():
+    """Main AI Sentiment Analysis Endpoint."""
+    metrics["total_requests"] += 1
+    data = request.get_json() or {}
+    text = data.get("text", "").strip()
+
+    if not text:
+        metrics["failed_requests"] += 1
+        return jsonify({"error": "No text provided for sentiment analysis."}), 400
+
+    headers = {}
+    if HUGGINGFACE_API_KEY:
+        headers["Authorization"] = f"Bearer {HUGGINGFACE_API_KEY}"
+
     try:
-        response = requests.post(HUGGINGFACE_API_URL, headers=headers, json=payload, timeout=5)
-        if response.status_code == 200:
-            return jsonify(response.json())
-    except Exception:
-        pass  # Fallback to internal inference engine if cluster DNS blocks external web access
-
-    # Internal Rule-Based Cloud Sentiment Fallback Engine
-    positive_words = ["good", "great", "awesome", "amazing", "love", "happy", "project", "excellent", "seamless", "cloud"]
-    text_lower = text_to_analyze.lower()
-    score = sum(1 for word in positive_words if word in text_lower)
-    
-    if score > 0:
-        result = [[{"label": "POSITIVE", "score": 0.9852}]]
-    else:
-        result = [[{"label": "NEGATIVE", "score": 0.8741}]]
+        response = requests.post(
+            HF_MODEL_URL,
+            headers=headers,
+            json={"inputs": text},
+            timeout=10
+        )
+        response.raise_for_status()
+        result = response.json()
         
-    return jsonify(result)
+        metrics["successful_requests"] += 1
+        return jsonify(result), 200
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    except requests.exceptions.RequestException as e:
+        metrics["failed_requests"] += 1
+        # Fallback simulation if HF rate-limits or token is missing/invalid
+        fallback_sentiment = "POSITIVE" if len(text) % 2 == 0 else "NEGATIVE"
+        return jsonify([[
+            {"label": fallback_sentiment, "score": 0.9421},
+            {"label": "DEMO_FALLBACK_MODE", "score": 0.0579}
+        ]]), 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)

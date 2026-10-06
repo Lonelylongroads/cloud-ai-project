@@ -3,90 +3,455 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cloud AI Analyzer</title>
+    <title>Cloud AI Sentiment & Cluster Analytics</title>
     <style>
+      :root {
+        --bg-color: #0f172a;
+        --card-bg: rgba(30, 41, 59, 0.7);
+        --border-color: rgba(255, 255, 255, 0.1);
+        --accent-blue: #38bdf8;
+        --accent-green: #22c55e;
+        --accent-red: #ef4444;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        margin: 40px;
-        background: #eef2f3;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        color: var(--text-primary);
+        min-height: 100vh;
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
-      .card {
-        background: white;
-        padding: 25px;
+
+      .container {
+        width: 100%;
+        max-width: 900px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      /* Glassmorphism Card */
+      .glass-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 1rem;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent-blue);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .badge-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .status-badge {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--border-color);
         border-radius: 10px;
-        max-width: 550px;
-        margin: 0 auto;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
       }
-      h2 {
-        color: #333;
-        margin-top: 0;
+
+      .status-badge label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
+
+      .status-badge span {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .status-online {
+        color: var(--accent-green);
+      }
+
       textarea {
         width: 100%;
-        height: 100px;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        font-size: 14px;
-        box-sizing: border-box;
+        height: 110px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: #fff;
+        padding: 1rem;
+        font-size: 0.95rem;
+        resize: none;
+        outline: none;
+        transition: border-color 0.2s;
+        margin-top: 1rem;
       }
-      button {
-        background: #007bff;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        border-radius: 5px;
+
+      textarea:focus {
+        border-color: var(--accent-blue);
+      }
+
+      .presets {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .btn-preset {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
         cursor: pointer;
-        font-size: 15px;
-        margin-top: 10px;
+        transition: all 0.2s;
+      }
+
+      .btn-preset:hover {
+        background: rgba(56, 189, 248, 0.2);
+        color: var(--accent-blue);
+      }
+
+      .btn-primary {
         width: 100%;
+        background: linear-gradient(90deg, #0284c7 0%, #2563eb 100%);
+        border: none;
+        color: white;
+        padding: 0.85rem;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 1rem;
+        transition:
+          transform 0.1s,
+          opacity 0.2s;
       }
-      button:hover {
-        background: #0056b3;
+
+      .btn-primary:hover {
+        opacity: 0.95;
       }
-      pre {
-        background: #272822;
-        color: #f8f8f2;
-        padding: 15px;
-        border-radius: 5px;
-        overflow-x: auto;
-        font-size: 13px;
+      .btn-primary:active {
+        transform: scale(0.99);
+      }
+
+      /* Confidence Progress Gauge */
+      .results-panel {
+        display: none;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .score-bar-bg {
+        width: 100%;
+        height: 12px;
+        background: rgba(15, 23, 42, 0.8);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 0.25rem;
+      }
+
+      .score-bar-fill {
+        height: 100%;
+        width: 0%;
+        transition:
+          width 0.6s ease-out,
+          background-color 0.3s;
+      }
+
+      /* History Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.6rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      th {
+        color: var(--text-secondary);
       }
     </style>
   </head>
   <body>
-    <div class="card">
-      <h2>☁️ Cloud AI Sentiment Analyzer</h2>
-      <p>Runs on Kubernetes Cluster with Hugging Face AI Integration</p>
-      <textarea
-        id="inputText"
-        placeholder="Type something... e.g. 'Cloud computing with Kubernetes makes deployment so seamless!'"
-      ></textarea>
-      <button onclick="analyzeText()">Analyze Sentiment</button>
+    <div class="container">
+      <!-- Top System Architecture Header -->
+      <div class="glass-card">
+        <div class="header">
+          <h1>☁️ Cloud AI Sentiment Analyzer</h1>
+          <span style="font-size: 0.8rem; color: var(--text-secondary)"
+            >Cluster Deployment v1.0</span
+          >
+        </div>
 
-      <h3>Result:</h3>
-      <pre id="output">Results will appear here after clicking analyze...</pre>
+        <div class="badge-grid">
+          <div class="status-badge">
+            <label>Kubernetes Service</label>
+            <span class="status-online">● cloud-ai-service:5000</span>
+          </div>
+          <div class="status-badge">
+            <label>Pod Replicas</label>
+            <span>2 Active Nodes</span>
+          </div>
+          <div class="status-badge">
+            <label>AI Inference Engine</label>
+            <span>Hugging Face API</span>
+          </div>
+          <div class="status-badge">
+            <label>Health Endpoint</label>
+            <span id="health-status">Checking...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Analytics Card -->
+      <div class="glass-card">
+        <h2 style="font-size: 1.1rem">Submit Input Text</h2>
+
+        <textarea
+          id="inputText"
+          placeholder="Type a sentence to analyze sentiment..."
+        ></textarea>
+
+        <div class="presets">
+          <span
+            style="
+              font-size: 0.8rem;
+              color: var(--text-secondary);
+              align-self: center;
+            "
+            >Quick Test:</span
+          >
+          <button
+            class="btn-preset"
+            onclick="
+              setPreset(
+                'This cloud computing project implementation is incredible!',
+              )
+            "
+          >
+            Positive Sample
+          </button>
+          <button
+            class="btn-preset"
+            onclick="
+              setPreset(
+                'The service response time is terrible and failing consistently.',
+              )
+            "
+          >
+            Negative Sample
+          </button>
+          <button
+            class="btn-preset"
+            onclick="
+              setPreset('The kubernetes cluster was deployed on port 5000.')
+            "
+          >
+            Neutral Sample
+          </button>
+        </div>
+
+        <button class="btn-primary" onclick="analyzeSentiment()">
+          Analyze Sentiment
+        </button>
+
+        <!-- Dynamic Gauge Results -->
+        <div class="results-panel" id="resultsPanel">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div>
+              <span style="color: var(--text-secondary); font-size: 0.85rem"
+                >Predicted Sentiment:</span
+              >
+              <h3
+                id="sentimentLabel"
+                style="font-size: 1.4rem; margin-top: 0.2rem"
+              >
+                -
+              </h3>
+            </div>
+            <div style="text-align: right">
+              <span style="color: var(--text-secondary); font-size: 0.85rem"
+                >Confidence Score:</span
+              >
+              <h3
+                id="sentimentScore"
+                style="font-size: 1.4rem; margin-top: 0.2rem"
+              >
+                -
+              </h3>
+            </div>
+          </div>
+
+          <div>
+            <div class="score-bar-bg">
+              <div class="score-bar-fill" id="scoreBar"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request History Log Table -->
+      <div class="glass-card">
+        <h2 style="font-size: 1rem; color: var(--text-secondary)">
+          Request Execution Log
+        </h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Text Snippet</th>
+              <th>Result</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable">
+            <tr>
+              <td
+                colspan="4"
+                style="color: var(--text-secondary); text-align: center"
+              >
+                No queries submitted yet.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <script>
-      async function analyzeText() {
-        const text = document.getElementById("inputText").value;
-        const outputElement = document.getElementById("output");
-        outputElement.innerText = "Analyzing via Cloud API...";
+      // Fetch Kubernetes Liveness Status on Load
+      async function checkHealth() {
+        try {
+          const res = await fetch("/healthz");
+          if (res.ok) {
+            document.getElementById("health-status").innerHTML =
+              '<span class="status-online">● Healthy (200 OK)</span>';
+          }
+        } catch (e) {
+          document.getElementById("health-status").innerText = "Offline";
+        }
+      }
+      checkHealth();
+
+      function setPreset(text) {
+        document.getElementById("inputText").value = text;
+      }
+
+      async function analyzeSentiment() {
+        const text = document.getElementById("inputText").value.trim();
+        if (!text) return alert("Please enter some text!");
+
+        const btn = document.querySelector(".btn-primary");
+        btn.innerText = "Analyzing Cloud Inference...";
+        btn.disabled = true;
 
         try {
-          const response = await fetch("http://localhost:5000/analyze", {
+          const response = await fetch("/analyze", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text: text }),
           });
+
           const data = await response.json();
-          outputElement.innerText = JSON.stringify(data, null, 2);
-        } catch (error) {
-          outputElement.innerText =
-            "Error connecting to cloud service: " + error.message;
+
+          // Extract Hugging Face payload structure
+          let topResult = data[0][0] || data[0];
+          const label = topResult.label;
+          const score = (topResult.score * 100).toFixed(1);
+
+          // Display Results Panel
+          document.getElementById("resultsPanel").style.display = "flex";
+          document.getElementById("sentimentLabel").innerText = label;
+          document.getElementById("sentimentScore").innerText = score + "%";
+
+          const fill = document.getElementById("scoreBar");
+          fill.style.width = score + "%";
+
+          if (label === "POSITIVE") {
+            document.getElementById("sentimentLabel").style.color =
+              "var(--accent-green)";
+            fill.style.backgroundColor = "var(--accent-green)";
+          } else {
+            document.getElementById("sentimentLabel").style.color =
+              "var(--accent-red)";
+            fill.style.backgroundColor = "var(--accent-red)";
+          }
+
+          // Append to Execution Log Table
+          addHistoryLog(text, label, score + "%");
+        } catch (err) {
+          alert("Error calling sentiment service API.");
+        } finally {
+          btn.innerText = "Analyze Sentiment";
+          btn.disabled = false;
         }
+      }
+
+      function addHistoryLog(text, result, score) {
+        const tbody = document.getElementById("historyTable");
+        if (tbody.children[0].children.length === 1) tbody.innerHTML = "";
+
+        const row = document.createElement("tr");
+        const time = new Date().toLocaleTimeString();
+        const snippet = text.length > 35 ? text.substring(0, 35) + "..." : text;
+
+        row.innerHTML = `
+            <td>${time}</td>
+            <td>"${snippet}"</td>
+            <td style="color: ${result === "POSITIVE" ? "var(--accent-green)" : "var(--accent-red)"}; font-weight:600;">${result}</td>
+            <td>${score}</td>
+        `;
+        tbody.prepend(row);
       }
     </script>
   </body>
