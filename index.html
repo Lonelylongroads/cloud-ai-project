@@ -1,465 +1,398 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cloud AI Sentiment & Cluster Analytics</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud AI Sentiment & Emotion Analyzer</title>
     <style>
-      :root {
-        --bg-color: #0f172a;
-        --card-bg: rgba(30, 41, 59, 0.7);
-        --border-color: rgba(255, 255, 255, 0.1);
-        --accent-blue: #38bdf8;
-        --accent-green: #22c55e;
-        --accent-red: #ef4444;
-        --text-primary: #f8fafc;
-        --text-secondary: #94a3b8;
-      }
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-blue: #3b82f6;
+            --color-positive: #10b981;
+            --color-negative: #ef4444;
+            --color-neutral: #3b82f6;
+        }
 
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        font-family:
-          "Segoe UI",
-          system-ui,
-          -apple-system,
-          sans-serif;
-      }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
 
-      body {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-        color: var(--text-primary);
-        min-height: 100vh;
-        padding: 2rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            padding: 2rem;
+            min-height: 100vh;
+        }
 
-      .container {
-        width: 100%;
-        max-width: 900px;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-      }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
 
-      /* Glassmorphism Card */
-      .glass-card {
-        background: var(--card-bg);
-        backdrop-filter: blur(12px);
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 1.75rem;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      }
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
 
-      .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 1rem;
-      }
+        .header-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
 
-      .header h1 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--accent-blue);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
+        .stat-box {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+        }
 
-      .badge-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-        margin-top: 1rem;
-      }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
 
-      .status-badge {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        padding: 0.75rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
 
-      .status-badge label {
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
+        .title-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-      .status-badge span {
-        font-weight: 600;
-        font-size: 0.95rem;
-      }
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            padding: 1rem;
+            font-size: 1rem;
+            resize: vertical;
+            margin: 1rem 0;
+        }
 
-      .status-online {
-        color: var(--accent-green);
-      }
+        textarea:focus {
+            outline: 1px solid var(--accent-blue);
+        }
 
-      textarea {
-        width: 100%;
-        height: 110px;
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        color: #fff;
-        padding: 1rem;
-        font-size: 0.95rem;
-        resize: none;
-        outline: none;
-        transition: border-color 0.2s;
-        margin-top: 1rem;
-      }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
 
-      textarea:focus {
-        border-color: var(--accent-blue);
-      }
+        select {
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            outline: none;
+        }
 
-      .presets {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
-        flex-wrap: wrap;
-      }
+        .quick-tests {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
 
-      .btn-preset {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid var(--border-color);
-        color: var(--text-secondary);
-        padding: 0.35rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
+        .btn-quick {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-      .btn-preset:hover {
-        background: rgba(56, 189, 248, 0.2);
-        color: var(--accent-blue);
-      }
+        .btn-quick:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
 
-      .btn-primary {
-        width: 100%;
-        background: linear-gradient(90deg, #0284c7 0%, #2563eb 100%);
-        border: none;
-        color: white;
-        padding: 0.85rem;
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        margin-top: 1rem;
-        transition:
-          transform 0.1s,
-          opacity 0.2s;
-      }
+        .btn-primary {
+            width: 100%;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-      .btn-primary:hover {
-        opacity: 0.95;
-      }
-      .btn-primary:active {
-        transform: scale(0.99);
-      }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
 
-      /* Confidence Progress Gauge */
-      .results-panel {
-        display: none;
-        flex-direction: column;
-        gap: 1rem;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border-color);
-      }
+        .result-container {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
 
-      .score-bar-bg {
-        width: 100%;
-        height: 12px;
-        background: rgba(15, 23, 42, 0.8);
-        border-radius: 6px;
-        overflow: hidden;
-        margin-top: 0.25rem;
-      }
+        .predicted-output {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
+        }
 
-      .score-bar-fill {
-        height: 100%;
-        width: 0%;
-        transition:
-          width 0.6s ease-out,
-          background-color 0.3s;
-      }
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
 
-      /* History Table */
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.85rem;
-        margin-top: 0.5rem;
-      }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent-blue);
+            border-radius: 4px;
+            transition: width 0.4s ease, background-color 0.3s ease;
+        }
 
-      th,
-      td {
-        text-align: left;
-        padding: 0.6rem;
-        border-bottom: 1px solid var(--border-color);
-      }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
 
-      th {
-        color: var(--text-secondary);
-      }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
     </style>
-  </head>
-  <body>
-    <div class="container">
-      <!-- Top System Architecture Header -->
-      <div class="glass-card">
-        <div class="header">
-          <h1>☁️ Cloud AI Sentiment Analyzer</h1>
-          <span style="font-size: 0.8rem; color: var(--text-secondary)"
-            >Cluster Deployment v1.0</span
-          >
+</head>
+<body>
+
+<div class="container">
+    <!-- Header Metrics Card -->
+    <div class="card">
+        <div class="title-container">
+            <h2>☁️ Cloud AI Sentiment & Emotion Analyzer</h2>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Cluster Deployment v1.0</span>
         </div>
-
-        <div class="badge-grid">
-          <div class="status-badge">
-            <label>Kubernetes Service</label>
-            <span class="status-online">● cloud-ai-service:5000</span>
-          </div>
-          <div class="status-badge">
-            <label>Pod Replicas</label>
-            <span>2 Active Nodes</span>
-          </div>
-          <div class="status-badge">
-            <label>AI Inference Engine</label>
-            <span>Hugging Face API</span>
-          </div>
-          <div class="status-badge">
-            <label>Health Endpoint</label>
-            <span id="health-status">Checking...</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main Analytics Card -->
-      <div class="glass-card">
-        <h2 style="font-size: 1.1rem">Submit Input Text</h2>
-
-        <textarea
-          id="inputText"
-          placeholder="Type a sentence to analyze sentiment..."
-        ></textarea>
-
-        <div class="presets">
-          <span
-            style="
-              font-size: 0.8rem;
-              color: var(--text-secondary);
-              align-self: center;
-            "
-            >Quick Test:</span
-          >
-          <button
-            class="btn-preset"
-            onclick="
-              setPreset(
-                'This cloud computing project implementation is incredible!',
-              )
-            "
-          >
-            Positive Sample
-          </button>
-          <button
-            class="btn-preset"
-            onclick="
-              setPreset(
-                'The service response time is terrible and failing consistently.',
-              )
-            "
-          >
-            Negative Sample
-          </button>
-          <button
-            class="btn-preset"
-            onclick="
-              setPreset('The kubernetes cluster was deployed on port 5000.')
-            "
-          >
-            Neutral Sample
-          </button>
-        </div>
-
-        <button class="btn-primary" onclick="analyzeSentiment()">
-          Analyze Sentiment
-        </button>
-
-        <!-- Dynamic Gauge Results -->
-        <div class="results-panel" id="resultsPanel">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-            "
-          >
-            <div>
-              <span style="color: var(--text-secondary); font-size: 0.85rem"
-                >Predicted Sentiment:</span
-              >
-              <h3
-                id="sentimentLabel"
-                style="font-size: 1.4rem; margin-top: 0.2rem"
-              >
-                -
-              </h3>
+        <div class="header-grid">
+            <div class="stat-box">
+                <div class="stat-label">Kubernetes Service</div>
+                <div class="stat-value" style="color: #10b981;">● cloud-ai-service:5000</div>
             </div>
-            <div style="text-align: right">
-              <span style="color: var(--text-secondary); font-size: 0.85rem"
-                >Confidence Score:</span
-              >
-              <h3
-                id="sentimentScore"
-                style="font-size: 1.4rem; margin-top: 0.2rem"
-              >
-                -
-              </h3>
+            <div class="stat-box">
+                <div class="stat-label">Pod Replicas</div>
+                <div class="stat-value">2 Active Nodes</div>
             </div>
-          </div>
-
-          <div>
-            <div class="score-bar-bg">
-              <div class="score-bar-fill" id="scoreBar"></div>
+            <div class="stat-box">
+                <div class="stat-label">AI Inference Engine</div>
+                <div class="stat-value">Hugging Face API</div>
             </div>
-          </div>
+            <div class="stat-box">
+                <div class="stat-label">Health Status</div>
+                <div class="stat-value" id="health-status">Checking...</div>
+            </div>
         </div>
-      </div>
-
-      <!-- Request History Log Table -->
-      <div class="glass-card">
-        <h2 style="font-size: 1rem; color: var(--text-secondary)">
-          Request Execution Log
-        </h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Text Snippet</th>
-              <th>Result</th>
-              <th>Score</th>
-            </tr>
-          </thead>
-          <tbody id="historyTable">
-            <tr>
-              <td
-                colspan="4"
-                style="color: var(--text-secondary); text-align: center"
-              >
-                No queries submitted yet.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
 
-    <script>
-      // Target backend server port dynamically
-      const API_BASE =
-        window.location.port === "5000" ? "" : "http://localhost:5000";
+    <!-- Main Input Card -->
+    <div class="card">
+        <div class="controls">
+            <h3>Submit Input Text</h3>
+            <div>
+                <label for="model-task" style="font-size: 0.85rem; color: var(--text-secondary); margin-right: 0.5rem;">AI Model Task:</label>
+                <select id="model-task">
+                    <option value="sentiment">Sentiment Analysis (Binary)</option>
+                    <option value="emotion">Emotion Classifier (Multi-Class)</option>
+                </select>
+            </div>
+        </div>
 
-      // Fetch Kubernetes Liveness Status on Load
-      async function checkHealth() {
+        <textarea id="input-text" placeholder="Type text here to analyze..."></textarea>
+
+        <div class="quick-tests">
+            <span style="font-size: 0.85rem; color: var(--text-secondary); align-self: center;">Quick Test:</span>
+            <button class="btn-quick" onclick="setQuickText('Positive / Joy')">Positive / Joy</button>
+            <button class="btn-quick" onclick="setQuickText('Negative / Anger')">Negative / Anger</button>
+            <button class="btn-quick" onclick="setQuickText('Neutral Informational')">Neutral Informational</button>
+        </div>
+
+        <button class="btn-primary" onclick="analyzeText()">Analyze AI Inference</button>
+
+        <div class="result-container">
+            <div>
+                <div class="stat-label">Predicted Output:</div>
+                <div class="predicted-output" id="predicted-output">---</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="stat-label">Confidence & Latency:</div>
+                <div style="font-size: 1.2rem; font-weight: 600;" id="confidence-latency">0.0% (0ms)</div>
+            </div>
+        </div>
+
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="confidence-bar"></div>
+        </div>
+    </div>
+
+    <!-- Execution Log Card -->
+    <div class="card">
+        <h3>Request Execution & Benchmarking Log</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Model Task</th>
+                    <th>Result</th>
+                    <th>Score</th>
+                    <th>Latency</th>
+                </tr>
+            </thead>
+            <tbody id="log-table-body">
+                <!-- Log entries populate here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_BASE = window.location.port === '5500' ? 'http://localhost:5000' : '';
+
+    async function checkHealth() {
+        const healthEl = document.getElementById('health-status');
         try {
-          const res = await fetch(`${API_BASE}/healthz`);
-          if (res.ok) {
-            document.getElementById("health-status").innerHTML =
-              '<span class="status-online">● Healthy (200 OK)</span>';
-          }
-        } catch (e) {
-          document.getElementById("health-status").innerText = "Offline";
+            const res = await fetch(`${API_BASE}/healthz`);
+            if (res.ok) {
+                healthEl.innerHTML = '<span style="color: #10b981;">● Healthy (200 OK)</span>';
+            } else {
+                healthEl.innerHTML = '<span style="color: #ef4444;">● Unhealthy</span>';
+            }
+        } catch {
+            healthEl.innerHTML = '<span style="color: #ef4444;">● Offline</span>';
         }
-      }
-      checkHealth();
+    }
 
-      function setPreset(text) {
-        document.getElementById("inputText").value = text;
-      }
+    function setQuickText(type) {
+        const input = document.getElementById('input-text');
+        if (type === 'Positive / Joy') {
+            input.value = "The cluster deployment succeeded and API performance is outstanding!";
+        } else if (type === 'Negative / Anger') {
+            input.value = "The application experienced a server outage and high latency.";
+        } else {
+            input.value = "The backend microservice is deployed on port 5000 using Docker.";
+        }
+    }
 
-      async function analyzeSentiment() {
-        const text = document.getElementById("inputText").value.trim();
-        if (!text) return alert("Please enter some text!");
+    async function analyzeText() {
+        const text = document.getElementById('input-text').value.trim();
+        const modelType = document.getElementById('model-task').value;
 
-        const btn = document.querySelector(".btn-primary");
-        btn.innerText = "Analyzing Cloud Inference...";
-        btn.disabled = true;
+        if (!text) {
+            alert('Please enter text to analyze.');
+            return;
+        }
 
         try {
-          const response = await fetch(`${API_BASE}/analyze`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: text }),
-          });
+            const res = await fetch(`${API_BASE}/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, model_type: modelType })
+            });
 
-          const data = await response.json();
+            if (!res.ok) throw new Error('Server returned error');
 
-          // Extract Hugging Face payload structure
-          let topResult = Array.isArray(data[0]) ? data[0][0] : data[0];
-          const label = topResult.label;
-          const score = (topResult.score * 100).toFixed(1);
-
-          // Display Results Panel
-          document.getElementById("resultsPanel").style.display = "flex";
-          document.getElementById("sentimentLabel").innerText = label;
-          document.getElementById("sentimentScore").innerText = score + "%";
-
-          const fill = document.getElementById("scoreBar");
-          fill.style.width = score + "%";
-
-          if (label === "POSITIVE") {
-            document.getElementById("sentimentLabel").style.color =
-              "var(--accent-green)";
-            fill.style.backgroundColor = "var(--accent-green)";
-          } else {
-            document.getElementById("sentimentLabel").style.color =
-              "var(--accent-red)";
-            fill.style.backgroundColor = "var(--accent-red)";
-          }
-
-          // Append to Execution Log Table
-          addHistoryLog(text, label, score + "%");
+            const data = await res.json();
+            updateUI(data, modelType);
         } catch (err) {
-          alert(
-            "Error calling sentiment service API. Make sure Python Flask (app.py) is running on port 5000!",
-          );
-        } finally {
-          btn.innerText = "Analyze Sentiment";
-          btn.disabled = false;
+            alert('Error calling server. Ensure python app.py is running on port 5000.');
         }
-      }
+    }
 
-      function addHistoryLog(text, result, score) {
-        const tbody = document.getElementById("historyTable");
-        if (tbody.children[0] && tbody.children[0].children.length === 1)
-          tbody.innerHTML = "";
+    function updateUI(data, modelType) {
+        let label = 'UNKNOWN';
+        let score = 0;
 
-        const row = document.createElement("tr");
-        const time = new Date().toLocaleTimeString();
-        const snippet = text.length > 35 ? text.substring(0, 35) + "..." : text;
+        if (Array.isArray(data.result) && data.result[0]) {
+            const topPrediction = Array.isArray(data.result[0]) ? data.result[0][0] : data.result[0];
+            label = topPrediction.label.toUpperCase();
+            score = (topPrediction.score * 100).toFixed(1);
+        }
 
+        const outputEl = document.getElementById('predicted-output');
+        const confLatencyEl = document.getElementById('confidence-latency');
+        const barEl = document.getElementById('confidence-bar');
+
+        outputEl.innerText = label;
+        confLatencyEl.innerText = `${score}% (${data.latency_ms}ms)`;
+        barEl.style.width = `${score}%`;
+
+        // Dynamic Color Scheme Logic
+        const negativeLabels = ['NEGATIVE', 'ANGER', 'SADNESS', 'FEAR', 'DISGUST'];
+        const positiveLabels = ['POSITIVE', 'JOY', 'LOVE'];
+
+        if (negativeLabels.includes(label)) {
+            barEl.style.backgroundColor = 'var(--color-negative)';
+            outputEl.style.color = 'var(--color-negative)';
+        } else if (positiveLabels.includes(label)) {
+            barEl.style.backgroundColor = 'var(--color-positive)';
+            outputEl.style.color = 'var(--color-positive)';
+        } else {
+            barEl.style.backgroundColor = 'var(--color-neutral)';
+            outputEl.style.color = 'var(--text-primary)';
+        }
+
+        // Add to Execution Log Table
+        const logBody = document.getElementById('log-table-body');
+        const row = document.createElement('tr');
+        const timeStr = new Date().toLocaleTimeString();
         row.innerHTML = `
-            <td>${time}</td>
-            <td>"${snippet}"</td>
-            <td style="color: ${result === "POSITIVE" ? "var(--accent-green)" : "var(--accent-red)"}; font-weight:600;">${result}</td>
-            <td>${score}</td>
+            <td>${timeStr}</td>
+            <td>${modelType.toUpperCase()}</td>
+            <td style="font-weight: 600; color: ${barEl.style.backgroundColor};">${label}</td>
+            <td>${score}%</td>
+            <td>${data.latency_ms}ms</td>
         `;
-        tbody.prepend(row);
-      }
-    </script>
-  </body>
+        logBody.prepend(row);
+    }
+
+    checkHealth();
+    setInterval(checkHealth, 10000);
+</script>
+
+</body>
 </html>
